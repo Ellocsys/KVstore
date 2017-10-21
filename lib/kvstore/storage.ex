@@ -1,1 +1,15 @@
-Этот модуль должен реализовать механизмы CRUD для хранения данных. Если одного модуля будет мало, то допускается создание модулей с префиксом "Storage" в названии.
+defmodule KVstore.Storage do
+    use GenServer
+    @moduledoc """
+    Модуль, который отвечает за хранение и предоставление данных в DETS
+    """
+    
+    def init(opts) do
+        file_name = Keyword.fetch!(opts, :file_name)
+    end
+    
+    def start_link(opts) do
+        GenServer.start_link(__MODULE__, opts, name: __MODULE__)
+    end
+    
+  end
