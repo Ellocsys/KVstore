@@ -11,4 +11,9 @@ defmodule StorageRecord do
     def to_tuple(record) do
         {record.key, record.value, record.ttl}
     end
+    
+    @spec to_tuple_with_realtime(StorageRecord.t, integer) :: tuple
+    def to_tuple_with_realtime(record, current_time \\ :os.system_time(:seconds)) do
+        {record.key, record.value, current_time + record.ttl}
+    end
 end
