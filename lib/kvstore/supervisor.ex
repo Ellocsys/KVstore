@@ -8,6 +8,7 @@ defmodule KVstore.Supervisor do
     def init(opts) do
       children = [
         {KVstore.Storage, [file_name: opts[:table_name]]},
+        Plug.Adapters.Cowboy.child_spec(:http, KVstore.Router, [], port: 8080)
       ]
   
       Supervisor.init(children, strategy: :one_for_one)

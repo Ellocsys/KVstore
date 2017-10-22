@@ -77,30 +77,19 @@ defmodule KVstore.Storage do
         - key: ключ по которому искать знвчение 
     """
     def lookup(table, key) do
-        case :dets.lookup(table, key) do
+        # Не получилось использовать 
+        # :ets.fun2ms(fn {key, val, ttl} when ttl > :os.system_time(:seconds) and key == key -> {key, val, ttl} end)
+        # т.к. :os.system_time(:seconds) нельзя использовать внутри сторожевой функции
+        fun = [{{:"$1", :"$2", :"$3"}, [{:andalso, {:>, :"$3", :os.system_time(:seconds)}, {:==, :"$1", key}}], [{{:"$1", :"$2", :"$3"}}]}]
+        case :dets.select(table, fun) do
             [{name, value, ttl}] ->{:ok, {name, value, ttl}}
             [] -> :error
         end
     end   
     
-    @doc """
-    Проверяет, не протухли ли данные
-
-    ## Параметры
-        - table: имя таблицы в которой искать 
-        - key: ключ по которому искать знвчение 
-    """
-    def check_ttl({table, name}) do
-        case lookup(table, name) do
-            {:ok, {key, val, ttl}} -> if ttl < :os.system_time(:seconds), do: :dets.delete(table, name) 
-            :error -> :error
-        end
-    end
-
     ## Обработчики вызовов
     
     def handle_call({:create, record}, _from, {table, refs}) do
-        check_ttl({table, record.key})
         case :dets.insert_new(table, StorageRecord.to_tuple_with_realtime(record)) do
             true -> {:reply, {:ok, StorageRecord.to_tuple_with_realtime(record)}, {table, refs}}
             false -> {:reply, {:error, "Already exist"}, {table, refs}}
@@ -108,7 +97,6 @@ defmodule KVstore.Storage do
     end
 
     def handle_call({:read, key}, _from, {table, refs}) do
-        check_ttl({table, key})
         case lookup(table, key) do
             {:ok, value} -> {:reply, {:ok, value}, {table, refs}}
             :error -> {:reply, {:error, "Not found"}, {table, refs}}
@@ -116,7 +104,6 @@ defmodule KVstore.Storage do
     end
 
     def handle_call({:update, record}, _from, {table, refs}) do
-        check_ttl({table, record.key})
         :dets.insert(table, StorageRecord.to_tuple_with_realtime(record))
         {:reply, {:ok, StorageRecord.to_tuple_with_realtime(record)}, {table, refs}}
     end

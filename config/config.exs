@@ -28,3 +28,7 @@ use Mix.Config
 # here (which is why it is important to import them last).
 #
 #     import_config "#{Mix.env}.exs"
+
+#Название таблицы для хранилища
+config :kvstore, 
+storage_name: :disk_storage
